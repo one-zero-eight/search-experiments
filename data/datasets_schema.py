@@ -1,15 +1,19 @@
+import asyncio
 from pathlib import Path
-from typing import Literal, Annotated, Any
+from typing import Literal, Annotated, Any, TypeAlias
 
 import yaml
 from pydantic import (
     ConfigDict,
     BaseModel as _BaseModel,
     Field,
-    FileUrl,
     Discriminator,
     model_validator,
+    BeforeValidator,
 )
+from tqdm.asyncio import tqdm
+
+from scripts.scrap_moodle import get_session, fetch_resource
 
 
 class BaseModel(_BaseModel):
@@ -27,9 +31,12 @@ class DatasetBase(BaseModel):
     "Description of dataset"
 
 
+FileId: TypeAlias = Annotated[str, BeforeValidator(str)]
+
+
 class DocumentStorage(BaseModel):
     class FileEntry(BaseModel):
-        url: FileUrl | None = None
+        url: str | None = None
         "URL to file"
         path: Path | None = None
         "Path to file"
@@ -39,9 +46,10 @@ class DocumentStorage(BaseModel):
             # xor
             if bool(self.url) == bool(self.path):
                 raise ValueError("Either url or path should be provided (not both)")
+            return self
 
-    _files: dict[str, FileEntry]
-    files: dict[str, FileEntry] = {}
+    _files: dict[FileId, FileEntry]
+    files: dict[FileId, FileEntry]
     "Files; key - ID of file"
     files_directory: Path | None = None
     "Directory of files: Each file will be added to files registry with relative path as ID"
@@ -55,7 +63,41 @@ class DocumentStorage(BaseModel):
                     _id = path.relative_to(
                         self.files_directory, walk_up=True
                     ).as_posix()
-                    self._files[_id] = self.FileEntry(path=path)
+                    if _id not in self._files:
+                        self._files[_id] = self.FileEntry(path=path)
+                    else:
+                        self._files[_id].path = path
+
+    async def _download_task(
+        self, _id: str, entry: FileEntry, output_dir: Path, session
+    ):
+        if entry.url is None:
+            return
+        content, _ = await fetch_resource(entry.url, session)
+        destination = output_dir / _id
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        with open(destination, "wb") as f:
+            f.write(content)
+        entry.path = destination
+
+    async def download_files(self, output_dir: str | Path):
+        # also will update _files
+        output_dir = Path(output_dir)
+        _to_download = {
+            _id: entry
+            for _id, entry in self._files.items()
+            if entry.url is not None and entry.path is None
+        }
+        if not _to_download:
+            print("Nothing to download")
+            return
+
+        async with get_session() as session:
+            async with asyncio.TaskGroup() as tg:
+                for _id, entry in tqdm(
+                    _to_download.items(), desc="Downloading files", unit="files"
+                ):
+                    tg.create_task(self._download_task(_id, entry, output_dir, session))
 
     def get(self, item: str, default: Any = Any):
         if default is Any:
@@ -88,7 +130,7 @@ class FileQueryAnswerDataset(DatasetBase):
     "Type of dataset: pdf files with query to find answer"
     document_storage: DocumentStorage
     "Document storage"
-    query_answers: dict[str, list[str]] = {}
+    query_answers: dict[str, list[FileId]] = {}
     "Query - relevant answers (ids of documents)"
 
     @model_validator(mode="after")
@@ -99,6 +141,7 @@ class FileQueryAnswerDataset(DatasetBase):
             for answer in answers:
                 if answer not in entries:
                     raise ValueError(f"Non-existing identifier: {answer}")
+        return self
 
 
 DatasetDiscriminator = Annotated[
