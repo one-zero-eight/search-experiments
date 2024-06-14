@@ -24,7 +24,7 @@ This is repository for our machine learning experiments for search engine.
 2. Install [Poetry](https://python-poetry.org/docs/)
 3. Install project dependencies with [Poetry](https://python-poetry.org/docs/cli/#options-2).
    ```bash
-   poetry install --no-root --with dev
+   poetry install --no-root
    ```
 4. Set up [pre-commit](https://pre-commit.com/) hooks:
 

@@ -85,19 +85,13 @@ PDF_TYPE = "application/pdf"
 PPTX_TYPE = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
 
 
-async def resource_task(section, course, resource, session, output_dir):
-    if not resource.get("url"):
-        return
+async def resource_task(session, url, file_path_without_ext):
+    content, content_type = await fetch_resource(url, session)
 
-    content, content_type = await fetch_resource(resource["url"], session)
     if content_type == PDF_TYPE:
-        destination = (
-            output_dir / course["name"] / section["name"] / f"{resource['name']}.pdf"
-        )
+        destination = file_path_without_ext.with_suffix(".pdf")
     elif content_type == PPTX_TYPE:
-        destination = (
-            output_dir / course["name"] / section["name"] / f"{resource['name']}.pptx"
-        )
+        destination = file_path_without_ext.with_suffix(".pptx")
     else:
         return
 
@@ -136,10 +130,23 @@ async def download_course(course_ids: list[int]):
 
                     tasks = []
                     for resource in section["resources"]:
+                        url = resource.get("url")
+                        if not url:
+                            continue
+                        file_path_without_ext = (
+                            output_dir
+                            / course["name"]
+                            / section["name"]
+                            / resource["name"]
+                        )
+                        # skip if already downloaded
+                        if (
+                            file_path_without_ext.with_suffix(".pdf").exists()
+                            or file_path_without_ext.with_suffix(".pptx").exists()
+                        ):
+                            continue
                         t = tg.create_task(
-                            resource_task(
-                                section, course, resource, session, output_dir
-                            )
+                            resource_task(session, url, file_path_without_ext)
                         )
                         tasks.append(t)
                     if not tasks:

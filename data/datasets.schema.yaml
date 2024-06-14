@@ -6,6 +6,7 @@ $defs:
       files:
         additionalProperties:
           $ref: '#/$defs/FileEntry'
+        default: []
         description: Files; key - ID of file
         title: Files
         type: object
@@ -18,8 +19,6 @@ $defs:
         description: 'Directory of files: Each file will be added to files registry
           with relative path as ID'
         title: Files Directory
-    required:
-    - files
     title: DocumentStorage
     type: object
   FileDataset:

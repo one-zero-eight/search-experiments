@@ -49,7 +49,7 @@ class DocumentStorage(BaseModel):
             return self
 
     _files: dict[FileId, FileEntry]
-    files: dict[FileId, FileEntry]
+    files: dict[FileId, FileEntry] = {}
     "Files; key - ID of file"
     files_directory: Path | None = None
     "Directory of files: Each file will be added to files registry with relative path as ID"

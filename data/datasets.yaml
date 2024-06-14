@@ -6,5 +6,3 @@ datasets:
     description: "Dataset with files from output directory and a links to a PDF file"
     document_storage:
       files_directory: "../scripts/output"
-      files:
-        0: { url: "https://arxiv.org/pdf/1706.03762" }
