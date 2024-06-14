@@ -116,7 +116,10 @@ async def download_course(course_ids: list[int]):
             course = await get_structure_of_course(moodle_root, course_id, session)
 
             # save to file
-            with open(output_dir / "meta.json", "w") as f:
+            print(course["name"])
+            _course_meta_path = output_dir / course["name"] / "meta.json"
+            _course_meta_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(_course_meta_path, "w") as f:
                 json.dump(course, f, indent=4)
 
             # download pdfs
@@ -141,8 +144,37 @@ async def download_course(course_ids: list[int]):
                         tasks.append(t)
                     if not tasks:
                         continue
-                    await tqdm_asyncio.gather(*tasks, desc=f"{section["id"]: <10}", unit="files")
+                    await tqdm_asyncio.gather(
+                        *tasks, desc=f"{section["id"]: <10}", unit="files"
+                    )
 
 
 if __name__ == "__main__":
-    asyncio.run(download_course([1114]))
+    courses = [
+        1104,
+        1106,
+        1110,
+        1114,
+        1117,
+        1118,
+        1220,
+        1222,
+        1223,
+        1225,
+        1328,
+        2463,
+        2563,
+        2600,
+        2601,
+        2602,
+        2603,
+        2604,
+        2605,
+        2739,
+        2740,
+        2741,
+        2742,
+        2743,
+    ]
+
+    asyncio.run(download_course(courses))
