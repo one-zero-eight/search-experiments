@@ -37,15 +37,3 @@ def usepymupdf(path: str | Path, text_splitter: Any = None):
         extract_images=True,
     )
     return _.load()
-
-
-def usellmsherpa(path: str | Path) -> list[Page]:
-    from llmsherpa.readers import LayoutPDFReader
-
-    llmsherpa_api_url = (
-        #  "http://localhost:5010/api/parseDocument?renderFormat=all&useNewIndentParser=true"
-        "https://readers.llmsherpa.com/api/document/developer/parseDocument?renderFormat=all"
-    )
-    pdf_reader = LayoutPDFReader(llmsherpa_api_url)
-    with open(path, "rb") as file:
-        return pdf_reader.read_pdf("", contents=file.read())
