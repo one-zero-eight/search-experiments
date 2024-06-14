@@ -1,0 +1,138 @@
+$schema: https://json-schema.org/draft-07/schema#
+$defs:
+  DocumentStorage:
+    additionalProperties: false
+    properties:
+      files:
+        additionalProperties:
+          $ref: '#/$defs/FileEntry'
+        default: {}
+        description: Files; key - ID of file
+        title: Files
+        type: object
+      files_directory:
+        anyOf:
+        - format: path
+          type: string
+        - type: 'null'
+        default: null
+        description: 'Directory of files: Each file will be added to files registry
+          with relative path as ID'
+        title: Files Directory
+    title: DocumentStorage
+    type: object
+  FileDataset:
+    additionalProperties: false
+    description: Definition of dataset with files
+    properties:
+      title:
+        default: ''
+        description: Title of dataset
+        title: Title
+        type: string
+      description:
+        default: ''
+        description: Description of dataset
+        title: Description
+        type: string
+      dataset_type:
+        const: files
+        default: files
+        description: 'Type of dataset: just files'
+        enum:
+        - files
+        title: Dataset Type
+        type: string
+      document_storage:
+        allOf:
+        - $ref: '#/$defs/DocumentStorage'
+        description: Document storage
+    required:
+    - document_storage
+    title: FileDataset
+    type: object
+  FileEntry:
+    additionalProperties: false
+    properties:
+      url:
+        anyOf:
+        - format: uri
+          minLength: 1
+          type: string
+        - type: 'null'
+        default: null
+        description: URL to file
+        title: Url
+      path:
+        anyOf:
+        - format: path
+          type: string
+        - type: 'null'
+        default: null
+        description: Path to file
+        title: Path
+    title: FileEntry
+    type: object
+  FileQueryAnswerDataset:
+    additionalProperties: false
+    description: Definition of dataset with query-answers pairs for files
+    properties:
+      title:
+        default: ''
+        description: Title of dataset
+        title: Title
+        type: string
+      description:
+        default: ''
+        description: Description of dataset
+        title: Description
+        type: string
+      dataset_type:
+        const: pdf_query_answer
+        default: files_query_answer
+        description: 'Type of dataset: pdf files with query to find answer'
+        enum:
+        - pdf_query_answer
+        title: Dataset Type
+        type: string
+      document_storage:
+        allOf:
+        - $ref: '#/$defs/DocumentStorage'
+        description: Document storage
+      query_answers:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+        default: {}
+        description: Query - relevant answers (ids of documents)
+        title: Query Answers
+        type: object
+    required:
+    - document_storage
+    title: FileQueryAnswerDataset
+    type: object
+additionalProperties: false
+description: Definition of datasets
+properties:
+  $schema:
+    default: null
+    title: $Schema
+    type: string
+  datasets:
+    additionalProperties:
+      discriminator:
+        mapping:
+          files: '#/$defs/FileDataset'
+          pdf_query_answer: '#/$defs/FileQueryAnswerDataset'
+        propertyName: dataset_type
+      oneOf:
+      - $ref: '#/$defs/FileDataset'
+      - $ref: '#/$defs/FileQueryAnswerDataset'
+    description: Datasets, key - ID of dataset (alias with version)
+    title: Datasets
+    type: object
+required:
+- datasets
+title: Datasets
+type: object

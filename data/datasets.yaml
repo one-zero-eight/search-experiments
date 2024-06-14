@@ -1,0 +1,8 @@
+$schema: "./datasets.schema.yaml"
+datasets:
+  moodle0.1.0:
+    dataset_type: files
+    title: "Moodle Dataset"
+    description: "Dataset with files from moodle scrapper"
+    document_storage:
+      files_directory: "../scripts/output"

@@ -1,0 +1,13 @@
+services:
+  qdrant-storage:
+    image: "qdrant/qdrant:v1.9.4"
+    restart: always
+    volumes:
+      - "qdrant-storage:/qdrant/storage:z"
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    env_file: .env
+
+volumes:
+  qdrant-storage:

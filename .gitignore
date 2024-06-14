@@ -1,0 +1,22 @@
+### PyCharm ###
+.idea
+
+### VSCode ###
+.vscode
+
+### Cache ###
+__pycache__
+.ruff_cache
+
+### Environment ###
+.env
+settings.yaml
+static
+venv
+
+### macOS Specific ###
+.DS_Store
+
+### Files
+scripts/output/*
+*.zip

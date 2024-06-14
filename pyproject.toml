@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "innohassle-search-experiments"
+version = "0.1.0"
+description = ""
+authors = ["Ruslan Bel'kov <ruslan.belckov@yandex.ru>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10,<3.13"
+pymupdf = "^1.24.5"
+langchain-community = "^0.2.4"
+ollama = "^0.2.1"
+langchain-qdrant = "^0.1.0"
+langchainhub = "^0.1.18"
+langchain = "^0.2.3"
+jupyter = "^1.0.0"
+pydantic = "^2.7.4"
+pyyaml = "^6.0.1"
+ruff = "^0.4.8"
+browser-cookie3 = "^0.19.1"
+httpx = "^0.27.0"
+beautifulsoup4 = "^4.12.3"
+markdownify = "^0.12.1"
+rapidocr-onnxruntime = "^1.3.22"
+pymupdf4llm = "^0.0.5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
