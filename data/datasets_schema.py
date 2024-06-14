@@ -11,7 +11,7 @@ from pydantic import (
     model_validator,
     BeforeValidator,
 )
-from tqdm.asyncio import tqdm
+from tqdm.asyncio import tqdm_asyncio
 
 from scripts.scrap_moodle import get_session, fetch_resource
 
@@ -94,10 +94,15 @@ class DocumentStorage(BaseModel):
 
         async with get_session() as session:
             async with asyncio.TaskGroup() as tg:
-                for _id, entry in tqdm(
-                    _to_download.items(), desc="Downloading files", unit="files"
-                ):
-                    tg.create_task(self._download_task(_id, entry, output_dir, session))
+                tasks = []
+                for _id, entry in _to_download.items():
+                    t = tg.create_task(
+                        self._download_task(_id, entry, output_dir, session)
+                    )
+                    tasks.append(t)
+                await tqdm_asyncio.gather(
+                    *tasks, desc="Downloading files", unit="files"
+                )
 
     def get(self, item: str, default: Any = Any):
         if default is Any:

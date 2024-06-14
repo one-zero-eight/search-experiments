@@ -1,12 +1,12 @@
 import asyncio
 import json
 from pathlib import Path
-from pprint import pprint
 
 import browser_cookie3
 import bs4
 import httpx
 from markdownify import markdownify as md
+from tqdm.asyncio import tqdm_asyncio
 
 
 def get_session():
@@ -36,10 +36,12 @@ async def get_structure_of_course(
     response.raise_for_status()
 
     soup = bs4.BeautifulSoup(response.text, "html.parser")
-    # find class="... course-section ..."
+    course_name = (
+        soup.find("div", class_="page-header-headings").find("h1").text.strip()
+    )
     course_sections = soup.find_all("li", class_="course-section")
 
-    structure = []
+    sections = []
 
     for section in course_sections:
         section_object = {}
@@ -71,25 +73,31 @@ async def get_structure_of_course(
             )
 
         section_object["resources"] = resources
-        structure.append(section_object)
+        sections.append(section_object)
 
-    return structure
+    return {
+        "name": course_name,
+        "sections": sections,
+    }
 
 
 PDF_TYPE = "application/pdf"
 PPTX_TYPE = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
 
 
-async def resource_task(section, resource, session, output_dir):
+async def resource_task(section, course, resource, session, output_dir):
     if not resource.get("url"):
         return
 
     content, content_type = await fetch_resource(resource["url"], session)
-    print(f'{section["name"]} - {resource["name"]} - {content_type}')
     if content_type == PDF_TYPE:
-        destination = output_dir / section["name"] / f"{resource['name']}.pdf"
+        destination = (
+            output_dir / course["name"] / section["name"] / f"{resource['name']}.pdf"
+        )
     elif content_type == PPTX_TYPE:
-        destination = output_dir / section["name"] / f"{resource['name']}.pptx"
+        destination = (
+            output_dir / course["name"] / section["name"] / f"{resource['name']}.pptx"
+        )
     else:
         return
 
@@ -98,34 +106,43 @@ async def resource_task(section, resource, session, output_dir):
         f.write(content)
 
 
-async def download_course(course_id: int):
+async def download_course(course_ids: list[int]):
     moodle_root = "https://moodle.innopolis.university"
     output_dir = Path("output")
     output_dir.mkdir(exist_ok=True)
 
     async with get_session() as session:
-        structure = await get_structure_of_course(moodle_root, course_id, session)
-        pprint(structure)
+        for course_id in course_ids:
+            course = await get_structure_of_course(moodle_root, course_id, session)
 
-        # save to file
-        with open(output_dir / "meta.json", "w") as f:
-            json.dump(structure, f, indent=4)
+            # save to file
+            with open(output_dir / "meta.json", "w") as f:
+                json.dump(course, f, indent=4)
 
-        # download pdfs
-        async with asyncio.TaskGroup() as tg:
-            for section in structure:
-                # create meta file
-                _meta_path = output_dir / section["name"] / "meta.json"
-                _meta_path.parent.mkdir(parents=True, exist_ok=True)
-
-                with open(_meta_path, "w") as f:
-                    json.dump(section, f, indent=4)
-
-                for resource in section["resources"]:
-                    tg.create_task(
-                        resource_task(section, resource, session, output_dir)
+            # download pdfs
+            async with asyncio.TaskGroup() as tg:
+                for section in course["sections"]:
+                    # create meta file
+                    _meta_path = (
+                        output_dir / course["name"] / section["name"] / "meta.json"
                     )
+                    _meta_path.parent.mkdir(parents=True, exist_ok=True)
+
+                    with open(_meta_path, "w") as f:
+                        json.dump(section, f, indent=4)
+
+                    tasks = []
+                    for resource in section["resources"]:
+                        t = tg.create_task(
+                            resource_task(
+                                section, course, resource, session, output_dir
+                            )
+                        )
+                        tasks.append(t)
+                    if not tasks:
+                        continue
+                    await tqdm_asyncio.gather(*tasks, desc=f"{section["id"]: <10}", unit="files")
 
 
 if __name__ == "__main__":
-    asyncio.run(download_course(1114))
+    asyncio.run(download_course([1114]))
