@@ -1,8 +1,0 @@
-$schema: "./datasets.schema.yaml"
-datasets:
-  test-0.1.0:
-    dataset_type: files
-    title: "Test Dataset"
-    description: "Dataset with files from output directory and a links to a PDF file"
-    document_storage:
-      files_directory: "../scripts/output"

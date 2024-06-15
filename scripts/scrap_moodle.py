@@ -1,18 +1,20 @@
 import asyncio
 import json
+import os
 from pathlib import Path
 
-import browser_cookie3
 import bs4
 import httpx
+from httpx import Cookies
 from markdownify import markdownify as md
 from tqdm.asyncio import tqdm_asyncio
 
 
 def get_session():
-    cj = browser_cookie3.load(domain_name="moodle.innopolis.university")
     session = httpx.AsyncClient(follow_redirects=True)
-    session.cookies = cj
+    # get cookie from env
+    moodle_session = os.environ.get("MOODLE_SESSION")
+    session.cookies = Cookies({"MoodleSession": moodle_session})
     return session
 
 
@@ -27,18 +29,14 @@ async def fetch_resource(url: str, session: httpx.AsyncClient):
     return response.content, content_type
 
 
-async def get_structure_of_course(
-    moodle_root: str, course_id: int, session: httpx.AsyncClient
-):
+async def get_structure_of_course(moodle_root: str, course_id: int, session: httpx.AsyncClient):
     url = f"{moodle_root}/course/view.php?id={course_id}"
 
     response = await session.get(url)
     response.raise_for_status()
 
     soup = bs4.BeautifulSoup(response.text, "html.parser")
-    course_name = (
-        soup.find("div", class_="page-header-headings").find("h1").text.strip()
-    )
+    course_name = soup.find("div", class_="page-header-headings").find("h1").text.strip()
     course_sections = soup.find_all("li", class_="course-section")
 
     sections = []
@@ -46,11 +44,7 @@ async def get_structure_of_course(
     for section in course_sections:
         section_object = {}
         section_object["id"] = section["id"]
-        section_object["name"] = (
-            section.find("h3", class_="sectionname")
-            .text.strip()
-            .replace("Общее", "General")
-        )
+        section_object["name"] = section.find("h3", class_="sectionname").text.strip().replace("Общее", "General")
         _summarytext = section.find("div", class_="summarytext")
         if _summarytext:
             _summarytext: bs4.element.Tag
@@ -68,9 +62,7 @@ async def get_structure_of_course(
             resource_name = _resource_name.text.strip()
 
             resource_url = resource.find("a")["href"]
-            resources.append(
-                {"id": resource_id, "name": resource_name, "url": resource_url}
-            )
+            resources.append({"id": resource_id, "name": resource_name, "url": resource_url})
 
         section_object["resources"] = resources
         sections.append(section_object)
@@ -120,9 +112,7 @@ async def download_course(course_ids: list[int]):
             async with asyncio.TaskGroup() as tg:
                 for section in course["sections"]:
                     # create meta file
-                    _meta_path = (
-                        output_dir / course["name"] / section["name"] / "meta.json"
-                    )
+                    _meta_path = output_dir / course["name"] / section["name"] / "meta.json"
                     _meta_path.parent.mkdir(parents=True, exist_ok=True)
 
                     with open(_meta_path, "w") as f:
@@ -133,55 +123,46 @@ async def download_course(course_ids: list[int]):
                         url = resource.get("url")
                         if not url:
                             continue
-                        file_path_without_ext = (
-                            output_dir
-                            / course["name"]
-                            / section["name"]
-                            / resource["name"]
-                        )
+                        file_path_without_ext = output_dir / course["name"] / section["name"] / resource["name"]
                         # skip if already downloaded
                         if (
                             file_path_without_ext.with_suffix(".pdf").exists()
                             or file_path_without_ext.with_suffix(".pptx").exists()
                         ):
                             continue
-                        t = tg.create_task(
-                            resource_task(session, url, file_path_without_ext)
-                        )
+                        t = tg.create_task(resource_task(session, url, file_path_without_ext))
                         tasks.append(t)
                     if not tasks:
                         continue
-                    await tqdm_asyncio.gather(
-                        *tasks, desc=f"{section["id"]: <10}", unit="files"
-                    )
+                    await tqdm_asyncio.gather(*tasks, desc=f"{section["id"]: <10}", unit="files")
 
 
 if __name__ == "__main__":
     courses = [
         1104,
-        1106,
-        1110,
-        1114,
-        1117,
-        1118,
-        1220,
-        1222,
-        1223,
-        1225,
-        1328,
-        2463,
-        2563,
-        2600,
-        2601,
-        2602,
-        2603,
-        2604,
-        2605,
-        2739,
-        2740,
-        2741,
-        2742,
-        2743,
+        # 1106,
+        # 1110,
+        # 1114,
+        # 1117,
+        # 1118,
+        # 1220,
+        # 1222,
+        # 1223,
+        # 1225,
+        # 1328,
+        # 2463,
+        # 2563,
+        # 2600,
+        # 2601,
+        # 2602,
+        # 2603,
+        # 2604,
+        # 2605,
+        # 2739,
+        # 2740,
+        # 2741,
+        # 2742,
+        # 2743,
     ]
 
     asyncio.run(download_course(courses))

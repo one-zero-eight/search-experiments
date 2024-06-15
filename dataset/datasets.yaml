@@ -1,0 +1,8 @@
+$schema: "./datasets.schema.yaml"
+datasets:
+  moodle:
+    dataset_type: files
+    title: "Moodle Dataset"
+    description: "Dataset with files from directory with Moodle data"
+    document_storage:
+      files_directory: "../data/moodle"

@@ -21,3 +21,4 @@ venv
 scripts/output/*
 download/
 *.zip
+/data

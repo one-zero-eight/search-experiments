@@ -1,17 +1,16 @@
 from pathlib import Path
-from typing import Any, TYPE_CHECKING
+from typing import Any
 
-if TYPE_CHECKING:
-    from experiments.to_markdown import Page
+from pymupdf4llm import to_markdown
+from pymupdf4llm.helpers.pymupdf_rag import ChunkData
 
 
-def use_pymupdf4llm(path: str | Path) -> list["Page"]:
-    from experiments.to_markdown import to_markdown
-
+def use_pymupdf4llm(
+    path: str | Path, page_chunks: bool = False
+) -> str | list[ChunkData]:
     return to_markdown(
         path,
-        write_images=lambda x: x.h > 10 and x.w > 10,
-        page_chunks=True,
+        page_chunks=page_chunks,
         margins=(0, 0, 0, 0),
     )
 
