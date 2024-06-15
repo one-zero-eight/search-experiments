@@ -60,17 +60,13 @@ class DocumentStorage(BaseModel):
         if self.files_directory is not None:
             for path in self.files_directory.rglob("*"):
                 if path.is_file():
-                    _id = path.relative_to(
-                        self.files_directory, walk_up=True
-                    ).as_posix()
+                    _id = path.relative_to(self.files_directory).as_posix()
                     if _id not in self._files:
                         self._files[_id] = self.FileEntry(path=path)
                     else:
                         self._files[_id].path = path
 
-    async def _download_task(
-        self, _id: str, entry: FileEntry, output_dir: Path, session
-    ):
+    async def _download_task(self, _id: str, entry: FileEntry, output_dir: Path, session):
         if entry.url is None:
             return
         content, _ = await fetch_resource(entry.url, session)
@@ -84,9 +80,7 @@ class DocumentStorage(BaseModel):
         # also will update _files
         output_dir = Path(output_dir)
         _to_download = {
-            _id: entry
-            for _id, entry in self._files.items()
-            if entry.url is not None and entry.path is None
+            _id: entry for _id, entry in self._files.items() if entry.url is not None and entry.path is None
         }
         if not _to_download:
             print("Nothing to download")
@@ -96,13 +90,9 @@ class DocumentStorage(BaseModel):
             async with asyncio.TaskGroup() as tg:
                 tasks = []
                 for _id, entry in _to_download.items():
-                    t = tg.create_task(
-                        self._download_task(_id, entry, output_dir, session)
-                    )
+                    t = tg.create_task(self._download_task(_id, entry, output_dir, session))
                     tasks.append(t)
-                await tqdm_asyncio.gather(
-                    *tasks, desc="Downloading files", unit="files"
-                )
+                await tqdm_asyncio.gather(*tasks, desc="Downloading files", unit="files")
 
     def get(self, item: str, default: Any = Any):
         if default is Any:
@@ -149,9 +139,7 @@ class FileQueryAnswerDataset(DatasetBase):
         return self
 
 
-DatasetDiscriminator = Annotated[
-    FileDataset | FileQueryAnswerDataset, Discriminator("dataset_type")
-]
+DatasetDiscriminator = Annotated[FileDataset | FileQueryAnswerDataset, Discriminator("dataset_type")]
 
 
 class Datasets(BaseModel):
