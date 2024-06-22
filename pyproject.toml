@@ -26,6 +26,7 @@ jupyter = "^1.0.0"
 pymupdf4llm = {url = "https://github.com/dantetemplar/pymupdf4llm/releases/download/0.1.0/pymupdf4llm-0.1.0.tar.gz"}
 torch = { version = "^2.3.1+cu118", source = "pytorch-cu118", markers = "extra=='cuda118'" }
 torchvision = { version = "^0.18.1+cu118", source = "pytorch-cu118", markers = "extra=='cuda118'" }
+pre-commit = "^3.7.1"
 
 [[tool.poetry.source]]
 name = "pytorch-cu118"
