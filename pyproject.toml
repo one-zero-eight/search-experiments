@@ -38,6 +38,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
+extend-include = ["*.ipynb"]
 line-length = 120
 lint.ignore = [
     # wildcard imports are fine

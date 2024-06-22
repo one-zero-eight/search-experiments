@@ -18,8 +18,16 @@ repos:
       - id: ruff
         args: [ --fix, --exit-zero ]
         name: "ruff: fixing"
+        types_or:
+          - jupyter
+          - python
+          - pyi
       - id: ruff-format
         name: "ruff: formatting"
+        types_or:
+          - jupyter
+          - python
+          - pyi
 
   # Lint Python files with Ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
@@ -27,6 +35,10 @@ repos:
     hooks:
       - id: ruff
         name: "ruff: linting"
+        types_or:
+          - jupyter
+          - python
+          - pyi
 
   # Check other files
   - repo: https://github.com/pre-commit/pre-commit-hooks
