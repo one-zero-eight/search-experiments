@@ -3987,12 +3987,12 @@ PyMuPDFb = "1.24.6"
 
 [[package]]
 name = "pymupdf4llm"
-version = "0.1.2"
+version = "0.1.3"
 description = "PyMuPDF Utilities for LLM/RAG"
 optional = false
 python-versions = ">=3.10,<4.0"
 files = [
-    {file = "pymupdf4llm-0.1.2.tar.gz", hash = "sha256:55f1179fa45ff103d81d29c977c0436f5df3cc8cd31fb0e19c2cd05612beb0b2"},
+    {file = "pymupdf4llm-0.1.3.tar.gz", hash = "sha256:805b6c4af8e275849dcab273ce5d07f4cb441fa3bb78f06828dea8351bcf8ede"},
 ]
 
 [package.dependencies]
@@ -4000,7 +4000,7 @@ pymupdf = ">=1.24.2"
 
 [package.source]
 type = "url"
-url = "https://github.com/dantetemplar/pymupdf4llm/releases/download/0.1.2/pymupdf4llm-0.1.2.tar.gz"
+url = "https://github.com/dantetemplar/pymupdf4llm/releases/download/0.1.3/pymupdf4llm-0.1.3.tar.gz"
 
 [[package]]
 name = "pymupdfb"
@@ -5745,4 +5745,4 @@ test = ["zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10,<=3.11.99"
-content-hash = "f6375321e703fafde3a820c33034715ef0d7dbdf7c82838113847c75aadef012"
+content-hash = "ad9f2899572c474ebf2495c7fb682af670c46c60568c3ad199f0d246aa9eae9b"
