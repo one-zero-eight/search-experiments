@@ -27,6 +27,9 @@ pymupdf4llm = {url = "https://github.com/dantetemplar/pymupdf4llm/releases/downl
 torch = { version = "^2.3.1+cu118", source = "pytorch-cu118", markers = "extra=='cuda118'" }
 torchvision = { version = "^0.18.1+cu118", source = "pytorch-cu118", markers = "extra=='cuda118'" }
 pre-commit = "^3.7.1"
+minio = "^7.2.7"
+sentence-transformers = "^3.0.1"
+faiss-cpu = "^1.8.0.post1"
 
 [[tool.poetry.source]]
 name = "pytorch-cu118"
