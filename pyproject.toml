@@ -30,6 +30,7 @@ pre-commit = "^3.7.1"
 minio = "^7.2.7"
 sentence-transformers = "^3.0.1"
 faiss-cpu = "^1.8.0.post1"
+pandas = "^2.2.2"
 
 [[tool.poetry.source]]
 name = "pytorch-cu118"
