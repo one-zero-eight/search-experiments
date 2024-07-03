@@ -41,7 +41,7 @@ def save_meta(save_path: Path):
         file.write(json.dumps(docs, ensure_ascii=False, indent=4))
 
 
-def download_pdfs(save_path: Path):
+def download_pdfs(save_path: Path, replace: bool = False):
     if not os.path.exists(save_path / "files"):
         os.mkdir(save_path / "files")
 
@@ -50,10 +50,14 @@ def download_pdfs(save_path: Path):
         docs = json.loads(file.read())
 
     for doc in tqdm(docs, total=len(docs), unit="doc"):
-        response = requests.get(doc["url"])
+        filename = save_path / "files" / doc["name"]
 
+        # skip if file is present and replace is set to False
+        if os.path.exists(filename) and not replace:
+            continue
+
+        response = requests.get(doc["url"])
         if response.status_code == 200:
-            filename = save_path / "files" / doc["name"]
             with open(filename, "wb") as f:
                 f.write(response.content)
         else:
@@ -63,6 +67,6 @@ def download_pdfs(save_path: Path):
 if __name__ == "__main__":
     save_path = Path("data")
     save_meta(save_path)
-    download_pdfs(save_path)
+    download_pdfs(save_path, replace=False)
     """In case of ERROR: unexpected error - attempt to write a readonly database
     https://github.com/iterative/dvc/issues/9379#issuecomment-1528145190"""
