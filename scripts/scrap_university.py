@@ -1,55 +1,68 @@
 import os
+import json
 import requests
+from tqdm import tqdm
+from pathlib import Path
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+from typing import TypedDict
+
 
 BASE_URL = "https://innopolis.university/sveden/document"
+META_FILE = "university.meta.json"
 
 
-def get_pdf_links(url: str) -> list[str]:
-    """
-    Retrieve all PDF links from the given webpage.
-    """
-    response = requests.get(url)
+class Document(TypedDict):
+    id: str
+    url: str
+    name: str
+    desc: str
+    type: str
+
+
+def save_meta(save_path: Path):
+    response = requests.get(BASE_URL)
     soup = BeautifulSoup(response.text, "html.parser")
 
-    # Find all <a> tags that link to PDF files
-    pdf_links = [a["href"] for a in soup.find_all("a", href=True) if a["href"].endswith(".pdf")]
+    docs: list[Document] = []
+    for link in soup.find_all("a", href=True):
+        if link["href"].endswith(".pdf"):
+            url = urljoin(BASE_URL, link["href"])
+            doc: Document = Document(
+                id=url,
+                url=url,
+                desc=link.text.strip(),
+                name=url[url.rfind("/") + 1 :],
+                type="file",
+            )
+            docs.append(doc)
 
-    # Make sure the links are absolute URLs
-    base_url = url.rstrip("/")
-    full_pdf_links = [urljoin(base_url, link) for link in pdf_links]
-
-    return full_pdf_links
-
-
-def download_pdf(url, save_path="."):
-    """
-    Download a PDF file from the given URL and save it to the specified path.
-    """
-    response = requests.get(url)
-
-    if response.status_code == 200:
-        filename = os.path.join(save_path, os.path.basename(url))
-        with open(filename, "wb") as f:
-            f.write(response.content)
-        print(f"Downloaded {filename}")
-    else:
-        print(f"Failed to download {url}")
+    with open(save_path / META_FILE, "w", encoding="utf-8") as file:
+        file.write(json.dumps(docs, ensure_ascii=False, indent=4))
 
 
-def main():
-    """
-    Main function to scrape PDF links from a webpage and download them.
-    """
-    pdf_links = get_pdf_links(BASE_URL)
+def download_pdfs(save_path: Path):
+    if not os.path.exists(save_path / "files"):
+        os.mkdir(save_path / "files")
 
-    for link in pdf_links:
-        print(link)
-        download_pdf(link, "data/university")
+    docs: list[Document] = []
+    with open(save_path / META_FILE, "r", encoding="utf-8") as file:
+        docs = json.loads(file.read())
+
+    for doc in tqdm(docs, total=len(docs), unit="doc"):
+        response = requests.get(doc["url"])
+
+        if response.status_code == 200:
+            filename = save_path / "files" / doc["name"]
+            with open(filename, "wb") as f:
+                f.write(response.content)
+        else:
+            tqdm.write(f"Failed to download {BASE_URL}")
 
 
 if __name__ == "__main__":
-    main()
+    save_path = Path("data")
+    save_meta(save_path)
+    download_pdfs(save_path)
     """In case of ERROR: unexpected error - attempt to write a readonly database
     https://github.com/iterative/dvc/issues/9379#issuecomment-1528145190"""
