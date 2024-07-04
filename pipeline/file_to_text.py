@@ -1,7 +1,8 @@
-from pymupdf4llm import process_document, join_chunks
 import os
+from time import time
 from tqdm import tqdm
 from pathlib import Path
+from pymupdf4llm import process_document, join_chunks
 
 
 def file_to_text(data_path: Path):
@@ -9,27 +10,25 @@ def file_to_text(data_path: Path):
     if not os.path.exists("./texts"):
         os.mkdir("./texts")
 
-    for dataset_path in data_path.iterdir():
-        dataset_name = dataset_path.name
-        dataset_path = dataset_path / "files"
-        total_files = sum(1 for _ in filter(Path.is_file, dataset_path.iterdir()))
+    texts = []
+    total_files = sum(1 for _ in filter(Path.is_file, data_path.iterdir()))
+    for file_path in tqdm(data_path.iterdir(), total=total_files, unit="file"):
+        if file_path.suffix == ".pdf":
+            t = time()
+            text = join_chunks(process_document(file_path))
+            texts.append(text)
 
-        # print entries
-        print(f"Dataset {dataset_name:<10} has {total_files:<4} files.")
+            # output huge files that takes more than 10 sec
+            if time() - t > 10:
+                print(f"{file_path.name} takes more than 10 sec")
 
-        texts = []
-        for file_path in tqdm(dataset_path.iterdir(), total=total_files):
-            if file_path.suffix == ".pdf":
-                text = join_chunks(process_document(file_path))
-                texts.append(text)
-
-                try:
-                    with open(f"texts/{file_path.name}.txt", "w", encoding="utf-8") as file:
-                        file.write(text)
-                except Exception as e:
-                    print(f"Error: {e}")
+            try:
+                with open(f"texts/{file_path.name}.txt", "w", encoding="utf-8") as file:
+                    file.write(text)
+            except Exception as e:
+                print(f"Error: {e}")
 
 
 if __name__ == "__main__":
-    data_path = Path("data")
+    data_path = Path("data/files")
     file_to_text(data_path)
