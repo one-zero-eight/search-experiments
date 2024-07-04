@@ -1,0 +1,31 @@
+[
+    {
+        "id": "{module-id}",
+        "url": "https://moodle",
+        "name": "name",
+        "desc": "desc",
+        "course_id": "",
+        "course_url": "",
+        "course_name": "",
+        "type": "moodle"
+    },
+    {
+        "id": "url",
+        "url": "url",
+        "name": "name",
+        "type": "web"
+    },
+    {
+        "id": "url",
+        "url": "url",
+        "name": "name",
+        "desc": "desc",
+        "type": "file"
+    },
+    {
+        "id": "{channel_id}-{message_id}",
+        "channel_id": "{channel_id}",
+        "channel_name": "channel_name",
+        "type": "tg"
+    }
+]

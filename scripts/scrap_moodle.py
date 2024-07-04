@@ -1,57 +1,40 @@
 import os
 import bs4
+import time
 import json
 import httpx
+import shutil
 import asyncio
 from pathlib import Path
 from httpx import Cookies
 from tqdm.asyncio import tqdm_asyncio
+from typing import TypedDict
+
 
 MOODLE_ROOT = "https://moodle.innopolis.university"
 PDF_TYPE = "application/pdf"
 PPTX_TYPE = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-DATASET_PATH = Path("data/moodle")
+SAVE_PATH = Path("data")
+META_FILE = "moodle.meta.json"
+
+
+class Document(TypedDict):
+    id: str
+    url: str
+    name: str
+    desc: str
+    course_id: str
+    course_url: str
+    course_name: str
+    type: str
 
 
 def get_session():
     # set number of max redirects (probably can be extended)
-    session = httpx.AsyncClient(follow_redirects=True, max_redirects=2, timeout=20)
+    session = httpx.AsyncClient(follow_redirects=True, max_redirects=3, timeout=30)
     moodle_session = os.environ.get("MOODLE_SESSION")  # get cookie from env
     session.cookies = Cookies({"MoodleSession": moodle_session})
     return session
-
-
-async def get_course_info(course_id: int, session: httpx.AsyncClient):
-    course_url = f"{MOODLE_ROOT}/course/view.php?id={course_id}"
-
-    response = await session.get(course_url)
-    response.raise_for_status()
-
-    soup = bs4.BeautifulSoup(response.text, "html.parser")
-    course_name = soup.find("div", class_="page-header-headings").find("h1").text.strip()
-    resources = soup.find_all("li", class_="resource")
-
-    course_files = []
-    for resource in resources:
-        file_id = resource["id"]
-        file_url = resource.find("a")["href"]
-
-        # get file name of hidden object
-        file_name = resource.find("span", class_="instancename")
-        inner_span = file_name.find("span", class_="accesshide")
-        if inner_span:
-            inner_span.decompose()
-        file_name = file_name.text.strip()
-
-        course_files.append(
-            {
-                "file_id": file_id,
-                "file_name": file_name,
-                "file_url": file_url,
-            }
-        )
-
-    return {"name": course_name, "url": course_url, "files": course_files}
 
 
 async def fetch_resource(url: str, session: httpx.AsyncClient):
@@ -65,23 +48,88 @@ async def fetch_resource(url: str, session: httpx.AsyncClient):
     return response.content, content_type
 
 
-async def file_task(url: str, file_id: str, session: httpx.AsyncClient):
-    content, content_type = await fetch_resource(url, session)
+async def course_task(course_id: int, session: httpx.AsyncClient):
+    course_url = f"{MOODLE_ROOT}/course/view.php?id={course_id}"
 
-    if content_type == PDF_TYPE:
-        destination = "data/moodle/files/" + file_id + ".pdf"
-    elif content_type == PPTX_TYPE:
-        destination = "data/moodle/files/" + file_id + ".pptx"
-    else:
-        # TODO: .txt
+    response = await session.get(course_url)
+    response.raise_for_status()
+
+    soup = bs4.BeautifulSoup(response.text, "html.parser")
+    course_name = soup.find("div", class_="page-header-headings").find("h1").text.strip()
+    resources = soup.find_all("li", class_="resource")
+
+    course_docs: list[Document] = []
+    for resource in resources:
+        file_id = resource["id"]
+        file_url = resource.find("a")["href"]
+
+        # fetch
+        start_time = time.time()
+        try:
+            content, content_type = await fetch_resource(file_url, session)
+        except httpx.ReadTimeout:
+            print(file_url)
+            continue
+
+        if start_time - time.time() > 15:  # find out large files
+            print(file_url)
+
+        # choose file extension
+        if content_type == PDF_TYPE:
+            extension = ".pdf"
+        elif content_type == PPTX_TYPE:
+            extension = ".pptx"
+        else:
+            continue
+
+        # save to file
+        file_name = file_id + extension
+        destination = SAVE_PATH / "files" / file_name
+        with open(destination, "wb") as f:
+            f.write(content)
+
+        # get file name of hidden object
+        file_desc = resource.find("span", class_="instancename")
+        inner_span = file_desc.find("span", class_="accesshide")
+        if inner_span:
+            inner_span.decompose()
+        file_desc = file_desc.text.strip()
+
+        doc = Document(
+            id=file_name,  # file_id
+            url=file_url,
+            name=file_name,
+            desc=file_desc,
+            course_id=course_id,
+            course_url=course_url,
+            course_name=course_name,
+            type="moodle",
+        )
+        course_docs.append(doc)
+
+    # don't save empty courses
+    if len(course_docs) == 0:
         return
 
-    with open(destination, "wb") as f:
-        f.write(content)
+    # save meta to temporary file
+    with open(SAVE_PATH / "temp" / f"{course_id}.json", "w", encoding="utf-8") as file:
+        file.write(json.dumps(course_docs, ensure_ascii=False, indent=4))
 
 
 async def scrap():
-    # os.environ["MOODLE_SESSION"] = "..."
+    """
+    Algorithm:
+        1. get session
+        2. get all courses ids
+        3. save html
+        4. start async tasks of downloading each course
+            - get and store resource file locally
+            - store meta data of each resource
+            - save meta in temp folder for each course
+        5. combine temp meta files in one
+        6. remove temp folder
+    """
+    os.environ["MOODLE_SESSION"] = "kfacnvclp7eqmjum1gra6s4f9q"
 
     # get session
     session = get_session()
@@ -94,56 +142,38 @@ async def scrap():
     soup = bs4.BeautifulSoup(html, "html.parser")
     courses_ids = [li["data-course-id"] for li in soup.find_all("li") if "data-course-id" in li.attrs]
 
-    json_data = []
-    for course_id in tqdm_asyncio(courses_ids):
-        course_info = await get_course_info(course_id, session)
+    # create files and temp folders if not exist
+    if not os.path.exists(SAVE_PATH / "files"):
+        os.mkdir(SAVE_PATH / "files")
 
-        # ignore courses with no attached files
-        if len(course_info["files"]) == 0:
-            continue
+    if not os.path.exists(SAVE_PATH / "temp"):
+        os.mkdir(SAVE_PATH / "temp")
 
-        json_data.append(
-            {
-                "course_id": course_id,
-                "course_name": course_info["name"],
-                "course_url": course_info["url"],
-                "files": course_info["files"],
-            }
-        )
+    async with asyncio.TaskGroup() as tg:
+        tasks = []
 
-    # write meta to the json file
-    with open("data/moodle/meta.json", "w", encoding="utf-8") as f:
-        f.write(json.dumps(json_data, indent=4))
+        for course_id in courses_ids:  # [courses_ids[0], courses_ids[1]]
+            task = tg.create_task(course_task(course_id, session))
+            tasks.append(task)
 
-    # the heaviest part is downloading files themselves
-    os.mkdir(DATASET_PATH / "files")
+        await tqdm_asyncio.gather(*tasks, desc=f"{course_id: <10}", unit="course")
 
-    for course_info in json_data:
-        async with asyncio.TaskGroup() as tg:
-            tasks = []
+    # combine temp files
+    docs = []
+    temp_path = Path(SAVE_PATH / "temp")
+    for temp_file in temp_path.iterdir():
+        with open(temp_file, "r", encoding="utf-8") as json_file:
+            data = json.load(json_file)
+            docs.extend(data)
 
-            for course_file in course_info["files"]:
-                task = tg.create_task(file_task(course_file["file_url"], course_file["file_id"], session))
-                tasks.append(task)
+    # save meta file
+    with open(SAVE_PATH / META_FILE, "w", encoding="utf-8") as file:
+        file.write(json.dumps(docs, ensure_ascii=False, indent=4))
 
-            await tqdm_asyncio.gather(*tasks, desc=f"{course_info['course_name']: <10}", unit="files")
+    # remove temp folder
+    if os.path.exists(SAVE_PATH / "temp"):
+        shutil.rmtree(SAVE_PATH / "temp")
 
 
 if __name__ == "__main__":
-    """Schema:
-    1. meta.json - all moodle files meta
-        [
-            {
-                course_id: int
-                course_name: str
-                course_url: str
-                files: [
-                    file_id: int
-                    file_name: str
-                    file_url: str
-                ]
-            }
-        ]
-    2. /files - pdfs and pptx
-    """
     asyncio.run(scrap())
