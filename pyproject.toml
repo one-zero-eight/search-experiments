@@ -31,6 +31,7 @@ minio = "^7.2.7"
 sentence-transformers = "^3.0.1"
 faiss-cpu = "^1.8.0.post1"
 pandas = "^2.2.2"
+ranx = "^0.3.20"
 
 [[tool.poetry.source]]
 name = "pytorch-cu118"
