@@ -1,0 +1,49 @@
+INFO:root:module-84829.pptx
+INFO:root:module-79159.pptx
+INFO:root:module-79162.pptx
+INFO:root:module-79165.pptx
+INFO:root:module-79168.pptx
+INFO:root:module-79172.pptx
+INFO:root:module-79176.pptx
+INFO:root:module-79180.pptx
+INFO:root:module-92289.pptx
+INFO:root:module-96105.pptx
+INFO:root:module-93909.pptx
+INFO:root:module-93912.pptx
+INFO:root:module-93918.pptx
+INFO:root:module-93920.pptx
+INFO:root:module-93922.pptx
+INFO:root:module-93925.pptx
+INFO:root:module-93928.pptx
+INFO:root:module-93931.pptx
+INFO:root:module-93933.pptx
+INFO:root:module-93937.pptx
+INFO:root:module-93939.pptx
+INFO:root:module-93941.pptx
+INFO:root:module-94088.pptx
+INFO:root:module-94093.pptx
+INFO:root:module-94098.pptx
+INFO:root:module-94103.pptx
+INFO:root:module-94105.pptx
+INFO:root:module-94113.pptx
+INFO:root:module-94117.pptx
+INFO:root:module-94123.pptx
+INFO:root:module-94128.pptx
+INFO:root:module-94132.pptx
+INFO:root:module-94138.pptx
+INFO:root:module-94143.pptx
+INFO:root:module-94148.pptx
+INFO:root:module-94153.pptx
+INFO:root:module-94158.pptx
+INFO:root:module-109937.pptx
+INFO:root:https://innopolis.university/upload/iblock/9ae/b8p7bc13ykj6dajtwa2a47kb3jwquozz/Визуализация_24_мая_Правила_приема_2024_бакалавриат_магистратура.pdf
+INFO:root:https://innopolis.university/upload/iblock/fe3/g0nnsoyubjyqig68qh2kjl25pclkb4g1/Визуализация_3_мая_Правила_приема_2024_бакалавриат_магистратура.pdf
+INFO:root:https://innopolis.university/upload/iblock/dc0/9f42wv342nxl233fun7coh9bxyq9b78d/Визуализация_16_января_Правила_приема_2024_бакалавры_магистры.pdf
+INFO:sentence_transformers.SentenceTransformer:Use pytorch device_name: cuda
+INFO:sentence_transformers.SentenceTransformer:Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+INFO:sentence_transformers.SentenceTransformer:Use pytorch device_name: cuda
+INFO:sentence_transformers.SentenceTransformer:Load pretrained SentenceTransformer: sentence-transformers/all-mpnet-base-v2
+INFO:sentence_transformers.SentenceTransformer:Use pytorch device_name: cuda
+INFO:sentence_transformers.SentenceTransformer:Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+INFO:sentence_transformers.SentenceTransformer:Use pytorch device_name: cuda
+INFO:sentence_transformers.SentenceTransformer:Load pretrained SentenceTransformer: sentence-transformers/all-mpnet-base-v2
